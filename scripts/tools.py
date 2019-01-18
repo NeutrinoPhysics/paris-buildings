@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+import functools as ft
 
 def distance(p1,p2):
     """
@@ -29,12 +30,64 @@ def distance(p1,p2):
     return float('{0:.2f}'.format(ortho))
 
 
-def median(p1, p2):
-    """
-    median coordinates of two points.
-    p1 and p2 must both be arrays of x and y coordinates.
-    returns an array of x and y coordinates.
-    """
-    med = p1+(p2-p1)/2.
-    return med
+
+
+
+class kmeans(object):
+
+    def __init__(self, dat, clu):
+        """
+        nk   :  nuber of clusters
+        csa  :  x,y coordinates array of samples
+        clu  :  x,y coordinates array of clusters
+        """
+
+        self.csa = dat
+        self.sz = self.csa.shape[-1]
+
+        self.clu = clu
+        self.nk = self.clu.shape[-1]
+
+        self.kmcluster()
+
+        return self.cid, self.cmu.T
+
+
+
+    def dtc(self, sa, cn):
+        """
+        distance to cluster
+        sa (int)    :   sample number
+        cn (int)    :   cluster number 
+        """
+        return distance(p1=self.csa[:,sa], p2=self.clu[:,cn])
+
+
+    def clustid(self, i):
+        """
+        identify id of cluster from sample number
+        """
+        return np.asarray(list(map(ft.partial(self.dtc,sa=i), np.arange(self.nk)))).argmin()
+
+
+    def clusam(self, cn):
+        """
+        cluster number sample
+        cn (int)    :   cluster number
+        """
+        return np.where(self.cid==cn)[0]
+
+
+    def cmean(self, cn):
+        """
+        cluster mean
+        """
+        return np.around(self.csa[:,self.cns[cn]].mean(axis=1),2)
+
+
+    def kmcluster(self):
+        self.cid = np.asarray(list(map(self.clustid, np.arange(self.sz))))
+        self.cmu = np.asarray(list(map(self.cmean,np.arange(self.nk))))
+
+        return
 
