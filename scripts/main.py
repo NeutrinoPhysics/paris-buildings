@@ -4,10 +4,7 @@
 # --- import packages
 import os
 import numpy as np
-#import scipy as sp
-#from scipy import stats, ndimage, signal
 import matplotlib as mpl 
-#import matplotlib.pyplot as plt 
 import matplotlib.image as mpimg
 
 # --- load modules
@@ -22,9 +19,13 @@ def find_roads(data):
 	print('finding roads...')
 	coords = data if data.shape[0]==2 else data[:2,:]
 
+	# --- make a roads plot directory if it doesn't exist
+	rdir = os.path.join(pdir, 'roads')
+	print('creating {}'.format(rdir)) if os.path.exists(rdir) else os.makedirs(rdir)
+
 	# --- scatter plot location of buildings
 	map_buildings(	coords = coords,
-					fsav   = os.path.join(pdir, 'paris_coords_light.png'),
+					fsav   = os.path.join(rdir, 'paris_coords_light.png'),
 					style  = 'light',
 					fgsz   = [20,16],
 					show   = False
@@ -32,7 +33,7 @@ def find_roads(data):
 
 	# --- save a thicker version for processing
 	map_buildings(	coords = coords,
-					fsav   = os.path.join(pdir, 'paris_coords_thick.png'),
+					fsav   = os.path.join(rdir, 'paris_coords_thick.png'),
 					style  = 'thick',
 					fgsz   = [40,30],
 					show   = False
@@ -41,7 +42,7 @@ def find_roads(data):
 
 
 	# --- load map from last image
-	img = mpimg.imread(os.path.join(pdir, 'paris_coords_thick.png'))
+	img = mpimg.imread(os.path.join(rdir, 'paris_coords_thick.png'))
 	img = img[:,:,:-1].mean(axis=-1)
 
 	# --- high pass filter
@@ -53,7 +54,7 @@ def find_roads(data):
 	histo_hpf(hpf   = hpf,
 			  thr   = thr,
 			  edge  = 256,
-			  fsav  = os.path.join(pdir, 'paris_hpflat.png'),
+			  fsav  = os.path.join(rdir, 'paris_hpflat.png'),
 			  show  = False
 			  )
 
@@ -63,7 +64,7 @@ def find_roads(data):
 
 	# --- plot countours map
 	map_mask( msk  = msk,
-			  fsav = os.path.join(pdir, 'paris_roads.png'),
+			  fsav = os.path.join(rdir, 'paris_roads.png'),
 			  show = False 
 			 )
 
@@ -71,7 +72,7 @@ def find_roads(data):
 	map_density(coords  = coords,
 				palette = 'CMRmap',
 				fgsz    = [40,30],
-				fsav    = os.path.join(pdir, 'paris_density.png'),
+				fsav    = os.path.join(rdir, 'paris_density.png'),
 				show    = False
 				)
 	print('done\n')
@@ -127,7 +128,6 @@ def launch_cluster(csa, nk, mxt):
 		stp += 1
 		print("step {}".format(stp))
 		fsav = os.path.join(kpdir, 'k'+str(nk)+'_step_'+str(stp)+'.png')
-		fidout = os.path.join(kfdir, bas+'_id_step'+str(stp)+'.npy')
 
 		new_clu = kmc.cmu.T.copy()
 		kmc = None
@@ -146,6 +146,22 @@ def launch_cluster(csa, nk, mxt):
 
 	return
 
+
+
+"""
+def analysis(nk):
+
+	# nk (int) :	number of clusters
+	
+	bas = 'k'+str(nk)
+	kfdir = os.path.join(fdir, bas)
+	fmuout = os.path.join(kfdir, bas+'_mu.npy')
+
+	cmu = np.load(fmuout)
+	deltas = np.sum(np.diff(cmu, axis=-1)**2, axis=0)
+
+	return deltas
+"""
 
 
 
@@ -173,5 +189,10 @@ if __name__ == '__main__':
 	# ---------------------------------------
 
 	find_roads(data=data)
-	launch_cluster(csa=data[:2,:], nk=300, mxt=20)
+	
+	launch_cluster(csa=data[:2,:], nk=15, mxt=15)
+
+
+
+
 
