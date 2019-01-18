@@ -3,6 +3,8 @@
 
 import numpy as np
 import functools as ft
+import scipy as sp
+from scipy import stats, ndimage, signal
 
 def distance(p1,p2):
     """
@@ -31,6 +33,23 @@ def distance(p1,p2):
 
 
 
+def highpass(img):
+    # --- high pass filter          
+    hpf = img - sp.ndimage.gaussian_filter(img, 2)
+
+    # --- convert to unsigned integer
+    hpf -= hpf.min()
+    hpf /= hpf.max()
+    hpf *= 255
+    hpf  = hpf.astype(np.uint8)
+
+    return hpf
+
+
+def mask(hpf, thr):
+    # --- select pixels above threshold value to make contour map
+    return sp.ndimage.filters.median_filter((hpf >= thr).astype(float), 2).astype(np.uint8)
+
 
 
 class kmeans(object):
@@ -48,13 +67,15 @@ class kmeans(object):
         self.clu = clu
         self.nk = self.clu.shape[-1]
 
-        self.kmcluster()
+        self.cid = np.asarray(list(map(self.clustid, np.arange(self.sz))))
+        self.cns = list(map(self.clusam, np.arange(self.nk)))
+        self.cmu = np.asarray(list(map(self.cmean,np.arange(self.nk))))
 
-        return self.cid, self.cmu.T
+        return 
 
 
 
-    def dtc(self, sa, cn):
+    def dtc(self, cn, sa):
         """
         distance to cluster
         sa (int)    :   sample number
@@ -70,6 +91,7 @@ class kmeans(object):
         return np.asarray(list(map(ft.partial(self.dtc,sa=i), np.arange(self.nk)))).argmin()
 
 
+
     def clusam(self, cn):
         """
         cluster number sample
@@ -82,12 +104,6 @@ class kmeans(object):
         """
         cluster mean
         """
-        return np.around(self.csa[:,self.cns[cn]].mean(axis=1),2)
+        return np.around(self.csa[:,self.cns[cn]].mean(axis=1),6)
 
-
-    def kmcluster(self):
-        self.cid = np.asarray(list(map(self.clustid, np.arange(self.sz))))
-        self.cmu = np.asarray(list(map(self.cmean,np.arange(self.nk))))
-
-        return
 
