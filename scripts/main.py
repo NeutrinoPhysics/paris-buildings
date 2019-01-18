@@ -12,7 +12,7 @@ import matplotlib.image as mpimg
 
 # --- load modules
 from read import fspex, fread
-from tools import distance
+import tools as tools
 
 
 
@@ -30,6 +30,7 @@ paris = os.path.join(fdir, 'paris_buildings.csv')
 hdr, fsz = fspex(paris)     # see 'read.py' for details
 data = fread(paris)         # see 'read.py' for details
 
+"""
 # --- scatter plot location of buildings
 fig=plt.figure(figsize=[20,16])
 plt.scatter(data[0], data[1], color='k', alpha=0.1, s=1)
@@ -140,7 +141,7 @@ plt.axis('off')
 plt.savefig(os.path.join(pdir, 'paris_density.png'))
 plt.close()
 
-
+"""
 
 
 
@@ -151,10 +152,67 @@ plt.close()
 
 # ======= K MEANS ALGORITHM ========
 
-# --- load coordinates of buildings
-coords = data[:2].T
 
-# --- compute distance between 2 points
-dist = distance(p1=coords[6], p2=coords[2])
 
-# etc, etc. your turn...
+# === meta params ===
+
+nk = 60		# number of clusters
+stp = 0		# initial step number (set to zero) 
+
+# --- define output directories
+bas = 'k'+str(nk)
+kpdir = os.path.join(pdir, bas) # kmeans plots directory
+kfdir = os.path.join(fdir, bas) # kmeans files directory
+fmuout = os.path.join(kfdir, bas+'_mu.npy')
+
+# --- create directories if they don't exist
+os.path.exists(kpdir) if os.path.exists(kpdir) else os.makedirs(kpdir)
+os.path.exists(kfdir) if os.path.exists(kfdir) else os.makedirs(kfdir)
+
+
+
+# === initiation step ===
+
+# --- isolate x,y coordinates from full data set
+csa = data[:2,:]
+
+# --- randomly draw first clusters
+drw = np.random.randint(low=0, high=fsz-1, size=nk, dtype=int)
+clu = csa[:,drw]
+
+# --- first iteration
+cid, cmu = tools.kmeans(dat=csa, clu=clu)
+cmu_arr = cmu.copy()
+
+
+# === interation steps ===
+
+while(np.not_equal(cmu, clu).sum()>0):
+
+	stp += 1
+	print("step {}".format(stp))
+	fsav = os.path.join(kpdir, 'k'+str(nk)+'_step_'+str(stp)+'.png')
+
+	cid, cmu_new = tools.kmeans(dat=csa, clu=cmu)
+	
+	cmu_arr = np.dstack((cmu_arr, cmu_new))
+	cmu = cmu_new.copy()
+	cmu_new = None
+
+	cid_arr = np.vstack((cid_arr, cid))
+	cid = cid_new.copy()
+	cid_new = None
+
+	cns = list(map(tools.clusam, np.arange(nk)))
+
+	# --- dump into file
+	np.save(fidout, np.asarray(cid))
+
+	# --- plot clusters map
+	plot_cluster(clu=clu, csa=csa, cns=cns, fsav=fsav)
+
+
+
+# --- dump into file
+np.save(fmuout, cmu_arr)
+np.save(fidout, np.asarray(cid))
